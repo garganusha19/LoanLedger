@@ -50,20 +50,102 @@ The following tables will be designed in detail before their respective modules 
 
 ---
 
-## Table Designs (populated incrementally)
+## Table Designs
 
-### `owners` — *(to be designed with Module 8: Authentication)*
+### `owners` (Module 8: Authentication)
+Stores lender/owner credentials and metadata.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `username VARCHAR(50) NOT NULL UNIQUE`
+- `password_hash VARCHAR(255) NOT NULL`
+- `full_name VARCHAR(100) NOT NULL`
+- `email VARCHAR(100) UNIQUE`
+- `status ENUM('active', 'inactive') NOT NULL DEFAULT 'active'`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `borrowers` — *(to be designed with Module 1: Borrower Management)*
+### `borrowers` (Module 1: Borrower Management)
+Stores borrower contact and identity profiles.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `full_name VARCHAR(100) NOT NULL`
+- `phone VARCHAR(20) NOT NULL UNIQUE`
+- `address VARCHAR(255) NOT NULL`
+- `id_number VARCHAR(50) NOT NULL UNIQUE` (Government ID)
+- `date_registered DATE NOT NULL`
+- `status ENUM('active', 'inactive') NOT NULL DEFAULT 'active'`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `loans` — *(to be designed with Module 2: Loan Management)*
+### `loans` (Module 2: Loan Management)
+Records loans linked to borrowers with terms and calculated totals.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `borrower_id INT NOT NULL` (FK -> `borrowers.id`)
+- `principal_amount DECIMAL(15, 2) NOT NULL`
+- `interest_type ENUM('FLAT', 'REDUCING_BALANCE', 'SIMPLE') NOT NULL`
+- `interest_rate DECIMAL(5, 2) NOT NULL`
+- `rate_period ENUM('DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL') NOT NULL`
+- `term_months INT NOT NULL`
+- `total_interest DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `total_payable DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `outstanding_balance DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `start_date DATE NOT NULL`
+- `due_date DATE NOT NULL`
+- `status ENUM('active', 'closed', 'overdue') NOT NULL DEFAULT 'active'`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `instalments` — *(to be designed with Module 5: Instalment Management)*
+### `instalments` (Module 5: Instalment Management)
+Tracks repayment schedule dates and breakdown for each loan.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `loan_id INT NOT NULL` (FK -> `loans.id`)
+- `instalment_number INT NOT NULL`
+- `due_date DATE NOT NULL`
+- `principal_amount DECIMAL(15, 2) NOT NULL`
+- `interest_amount DECIMAL(15, 2) NOT NULL`
+- `total_amount DECIMAL(15, 2) NOT NULL`
+- `paid_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `status ENUM('unpaid', 'partially_paid', 'paid', 'overdue') NOT NULL DEFAULT 'unpaid'`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `payments` — *(to be designed with Module 4: Payment Management)*
+### `payments` (Module 4: Payment Management)
+Immutable transaction log of payments received.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `loan_id INT NOT NULL` (FK -> `loans.id`)
+- `transaction_id VARCHAR(50) NOT NULL UNIQUE`
+- `amount DECIMAL(15, 2) NOT NULL`
+- `payment_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`
+- `payment_method ENUM('CASH', 'BANK_TRANSFER', 'UPI', 'CHEQUE', 'OTHER') NOT NULL DEFAULT 'CASH'`
+- `notes TEXT`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `payment_allocations` — *(to be designed with Module 4: Payment Management)*
+### `payment_allocations` (Module 4: Payment Management)
+Splits each payment into principal, interest, and penalty portions.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `payment_id INT NOT NULL` (FK -> `payments.id`)
+- `instalment_id INT NULL` (FK -> `instalments.id`)
+- `principal_portion DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `interest_portion DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `penalty_portion DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
 
-### `expenses` — *(to be designed with Module 7: Expense Management)*
+### `expenses` (Module 7: Expense Management)
+Tracks business expenses incurred by the lender.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `owner_id INT NULL` (FK -> `owners.id`)
+- `category VARCHAR(50) NOT NULL`
+- `amount DECIMAL(15, 2) NOT NULL`
+- `expense_date DATE NOT NULL`
+- `description VARCHAR(255)`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
+- `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 
-### `audit_log` — *(to be designed with Module 9: Dashboard and Audit)*
+### `audit_log` (Module 9: Dashboard and Audit)
+Immutable audit trail of actions performed.
+- `id INT AUTO_INCREMENT PRIMARY KEY`
+- `owner_id INT NULL` (FK -> `owners.id`)
+- `action VARCHAR(50) NOT NULL`
+- `entity_name VARCHAR(50) NOT NULL`
+- `entity_id INT NULL`
+- `details TEXT`
+- `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`

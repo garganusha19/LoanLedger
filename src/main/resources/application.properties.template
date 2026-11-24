@@ -1,8 +1,21 @@
+# ===================================================================
 # LoanLedger — Database Configuration Template
 #
-# Copy this file to application.properties and fill in your credentials.
-# application.properties is ignored by Git. This template IS committed.
+# Instructions:
+# 1. Copy this file to src/main/resources/application.properties
+# 2. Replace the placeholder values with your MySQL server configuration.
+# 3. application.properties is ignored by Git to protect credentials.
+# ===================================================================
 
+# Database JDBC Driver class
+db.driver=com.mysql.cj.jdbc.Driver
+
+# Database Name
+db.name=loanledger_db
+
+# Database Connection URL (includes character encoding and timezone parameters)
 db.url=jdbc:mysql://localhost:3306/loanledger_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-db.username=YOUR_USERNAME
-db.password=YOUR_PASSWORD
+
+# Database Credentials
+db.username=YOUR_MYSQL_USERNAME
+db.password=YOUR_MYSQL_PASSWORD
