@@ -2,6 +2,7 @@ package com.loanledger.util;
 
 import com.loanledger.exception.ValidationException;
 
+import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 /**
@@ -89,6 +90,84 @@ public class InputValidator {
         validatePhone(phone);
         validateAddress(address);
         validateIdNumber(idNumber);
+    }
+
+    /**
+     * Validates loan principal amount.
+     */
+    public static void validatePrincipal(BigDecimal principal) {
+        if (principal == null) {
+            throw new ValidationException("Principal amount is required.");
+        }
+        if (principal.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Principal must be greater than zero.");
+        }
+    }
+
+    /**
+     * Validates loan interest rate.
+     */
+    public static void validateInterestRate(BigDecimal rate) {
+        if (rate == null) {
+            throw new ValidationException("Interest rate is required.");
+        }
+        if (rate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Interest rate cannot be negative.");
+        }
+        if (rate.compareTo(new BigDecimal("1000")) > 0) {
+            throw new ValidationException("Interest rate cannot exceed 1000%.");
+        }
+    }
+
+    /**
+     * Validates loan duration in months.
+     */
+    public static void validateDurationMonths(int months) {
+        if (months < 1) {
+            throw new ValidationException("Loan duration must be at least 1 month.");
+        }
+        if (months > 360) {
+            throw new ValidationException("Loan duration cannot exceed 360 months (30 years).");
+        }
+    }
+
+    /**
+     * Validates interest type value.
+     */
+    public static void validateInterestType(String interestType) {
+        if (interestType == null || interestType.trim().isEmpty()) {
+            throw new ValidationException("Interest type is required.");
+        }
+        String t = interestType.trim().toLowerCase();
+        if (!t.equals("flat") && !t.equals("simple") && !t.equals("reducing_balance")) {
+            throw new ValidationException("Interest type must be 'flat', 'simple', or 'reducing_balance'.");
+        }
+    }
+
+    /**
+     * Validates rate period value.
+     */
+    public static void validateRatePeriod(String ratePeriod) {
+        if (ratePeriod == null || ratePeriod.trim().isEmpty()) {
+            throw new ValidationException("Rate period is required.");
+        }
+        String p = ratePeriod.trim().toLowerCase();
+        if (!p.equals("daily") && !p.equals("weekly") && !p.equals("monthly") && !p.equals("annually")) {
+            throw new ValidationException("Rate period must be 'daily', 'weekly', 'monthly', or 'annually'.");
+        }
+    }
+
+    /**
+     * Validates loan status value.
+     */
+    public static void validateLoanStatus(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            throw new ValidationException("Loan status is required.");
+        }
+        String s = status.trim().toLowerCase();
+        if (!s.equals("active") && !s.equals("completed") && !s.equals("defaulted")) {
+            throw new ValidationException("Loan status must be 'active', 'completed', or 'defaulted'.");
+        }
     }
 
     private InputValidator() {

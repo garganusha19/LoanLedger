@@ -1,7 +1,9 @@
 package com.loanledger;
 
 import com.loanledger.service.BorrowerService;
+import com.loanledger.service.LoanService;
 import com.loanledger.ui.BorrowerMenu;
+import com.loanledger.ui.LoanMenu;
 import com.loanledger.util.DBConnection;
 
 import java.sql.Connection;
@@ -13,9 +15,9 @@ import java.util.Scanner;
  *
  * This is the first class Java runs when the program starts.
  * It performs:
- *   1. Displays the startup banner.
- *   2. Tests the MySQL database connection.
- *   3. Presents the main menu and routes to respective modules.
+ * 1. Displays the startup banner.
+ * 2. Tests the MySQL database connection.
+ * 3. Presents the main menu and routes to respective modules.
  */
 public class Main {
 
@@ -68,6 +70,7 @@ public class Main {
     private static void showMainMenu(boolean connected) {
         Scanner scanner = new Scanner(System.in);
         BorrowerService borrowerService = new BorrowerService();
+        LoanService loanService = new LoanService();
         boolean running = true;
 
         while (running) {
@@ -87,7 +90,8 @@ public class Main {
                     break;
 
                 case 2:
-                    showComingSoon("Loan Management");
+                    LoanMenu loanMenu = new LoanMenu(loanService, borrowerService, scanner);
+                    loanMenu.display();
                     break;
 
                 case 3:
