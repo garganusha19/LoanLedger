@@ -76,4 +76,3 @@ class BorrowerTest {
         assertEquals(b1.hashCode(), b2.hashCode());
     }
 }
-

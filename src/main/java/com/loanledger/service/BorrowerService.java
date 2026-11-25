@@ -18,31 +18,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * BorrowerService — Service Layer for Borrower Management
- *
- * Responsibilities:
- * - Implements business logic and data validation for borrowers.
- * - Executes direct JDBC operations using PreparedStatement and DBConnection.
- * - Adheres strictly to the architectural rule: NO DAO layer.
- * - Handles soft-deletes (status = 'inactive') to preserve financial history.
- */
 public class BorrowerService {
 
-    /**
-     * Registers a new borrower into the system.
-     *
-     * @param borrower Borrower model containing full name, phone, address, and ID number
-     * @return the saved Borrower with its auto-generated database ID
-     * @throws ValidationException if input validation fails or duplicates exist
-     * @throws SQLException if a database error occurs
-     */
     public Borrower registerBorrower(Borrower borrower) throws SQLException {
         if (borrower == null) {
             throw new ValidationException("Borrower details cannot be null.");
         }
 
-        // Validate business and format rules
         InputValidator.validateBorrower(
                 borrower.getFullName(),
                 borrower.getPhone(),
@@ -50,7 +32,6 @@ public class BorrowerService {
                 borrower.getIdNumber()
         );
 
-        // Check for duplicates
         if (isPhoneExists(borrower.getPhone(), 0)) {
             throw new ValidationException("A borrower with phone number '" + borrower.getPhone() + "' already exists.");
         }
@@ -93,12 +74,6 @@ public class BorrowerService {
         return borrower;
     }
 
-    /**
-     * Retrieves all active borrowers.
-     *
-     * @return list of active Borrower entities
-     * @throws SQLException if database read fails
-     */
     public List<Borrower> getAllActiveBorrowers() throws SQLException {
         String sql = "SELECT id, full_name, phone, address, id_number, date_registered, status, created_at, updated_at " +
                      "FROM borrowers WHERE status = 'active' ORDER BY id ASC";
@@ -116,12 +91,6 @@ public class BorrowerService {
         return borrowers;
     }
 
-    /**
-     * Retrieves all borrowers including inactive ones.
-     *
-     * @return list of all Borrower entities
-     * @throws SQLException if database read fails
-     */
     public List<Borrower> getAllBorrowers() throws SQLException {
         String sql = "SELECT id, full_name, phone, address, id_number, date_registered, status, created_at, updated_at " +
                      "FROM borrowers ORDER BY id ASC";
@@ -139,14 +108,6 @@ public class BorrowerService {
         return borrowers;
     }
 
-    /**
-     * Finds a borrower by their primary ID.
-     *
-     * @param id Borrower primary key ID
-     * @return Borrower model
-     * @throws BorrowerNotFoundException if no borrower matches the ID
-     * @throws SQLException if database read fails
-     */
     public Borrower getBorrowerById(int id) throws SQLException {
         InputValidator.validatePositiveId(id, "Borrower ID");
 
@@ -168,13 +129,6 @@ public class BorrowerService {
         }
     }
 
-    /**
-     * Searches for borrowers matching a query string across name, ID, or phone number.
-     *
-     * @param query Search query string
-     * @return list of matching borrowers
-     * @throws SQLException if database read fails
-     */
     public List<Borrower> searchBorrowers(String query) throws SQLException {
         if (query == null || query.trim().isEmpty()) {
             return getAllActiveBorrowers();
@@ -185,7 +139,7 @@ public class BorrowerService {
         try {
             numericId = Integer.parseInt(trimmed);
         } catch (NumberFormatException ignored) {
-            // Not a purely numeric ID
+
         }
 
         String sql = "SELECT id, full_name, phone, address, id_number, date_registered, status, created_at, updated_at " +
@@ -213,15 +167,6 @@ public class BorrowerService {
         return results;
     }
 
-    /**
-     * Updates contact and personal details for an existing borrower.
-     *
-     * @param borrower Borrower with updated details
-     * @return true if updated successfully
-     * @throws BorrowerNotFoundException if borrower does not exist
-     * @throws ValidationException if validation or duplicate checks fail
-     * @throws SQLException if database update fails
-     */
     public boolean updateBorrower(Borrower borrower) throws SQLException {
         if (borrower == null) {
             throw new ValidationException("Borrower cannot be null.");
@@ -234,10 +179,8 @@ public class BorrowerService {
                 borrower.getIdNumber()
         );
 
-        // Ensure borrower exists
         getBorrowerById(borrower.getId());
 
-        // Check for duplicates excluding self
         if (isPhoneExists(borrower.getPhone(), borrower.getId())) {
             throw new ValidationException("Phone number '" + borrower.getPhone() + "' is already used by another borrower.");
         }
@@ -261,19 +204,9 @@ public class BorrowerService {
         }
     }
 
-    /**
-     * Deactivates a borrower (soft-delete).
-     * The record is retained in the database with status = 'inactive' for historical integrity.
-     *
-     * @param id Borrower ID
-     * @return true if deactivated successfully
-     * @throws BorrowerNotFoundException if borrower does not exist
-     * @throws SQLException if database update fails
-     */
     public boolean deactivateBorrower(int id) throws SQLException {
         InputValidator.validatePositiveId(id, "Borrower ID");
 
-        // Ensure borrower exists
         getBorrowerById(id);
 
         String sql = "UPDATE borrowers SET status = 'inactive' WHERE id = ?";
@@ -286,9 +219,6 @@ public class BorrowerService {
         }
     }
 
-    /**
-     * Checks if a phone number already exists in the database.
-     */
     public boolean isPhoneExists(String phone, int excludeId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM borrowers WHERE phone = ? AND id != ?";
         try (Connection conn = DBConnection.getConnection();
@@ -303,9 +233,6 @@ public class BorrowerService {
         }
     }
 
-    /**
-     * Checks if a government ID number already exists in the database.
-     */
     public boolean isIdNumberExists(String idNumber, int excludeId) throws SQLException {
         String sql = "SELECT COUNT(*) FROM borrowers WHERE id_number = ? AND id != ?";
         try (Connection conn = DBConnection.getConnection();
@@ -320,9 +247,6 @@ public class BorrowerService {
         }
     }
 
-    /**
-     * Maps a current ResultSet row to a Borrower entity POJO.
-     */
     private Borrower mapResultSetToBorrower(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String fullName = rs.getString("full_name");
@@ -344,4 +268,3 @@ public class BorrowerService {
         return new Borrower(id, fullName, phone, address, idNumber, dateRegistered, status, createdAt, updatedAt);
     }
 }
-

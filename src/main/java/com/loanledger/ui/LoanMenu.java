@@ -16,16 +16,6 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * LoanMenu — Console UI for Loan Management
- *
- * Responsibilities:
- * - Displays loan management options.
- * - Prompts user for input and passes data to LoanService.
- * - Uses BorrowerService to look up borrowers when creating a loan.
- * - Catches and displays user-friendly validation and database errors.
- * - Contains NO direct SQL queries or database connections.
- */
 public class LoanMenu {
 
     private final LoanService loanService;
@@ -38,9 +28,6 @@ public class LoanMenu {
         this.scanner = scanner;
     }
 
-    /**
-     * Entry point to show and handle the loan management menu.
-     */
     public void display() {
         boolean back = false;
 
@@ -100,13 +87,9 @@ public class LoanMenu {
         System.out.println("============================================");
     }
 
-    // -----------------------------------------------------------------
-    // Option 1: Create New Loan
-    // -----------------------------------------------------------------
     private void handleCreateLoan() {
         System.out.println("--- Create New Loan ---");
 
-        // Step 1: Show active borrowers for reference
         try {
             List<Borrower> activeBorrowers = borrowerService.getAllActiveBorrowers();
             if (activeBorrowers.isEmpty()) {
@@ -122,7 +105,6 @@ public class LoanMenu {
             return;
         }
 
-        // Step 2: Select borrower by ID
         System.out.print("Enter Borrower ID: ");
         int borrowerId = parseChoice(scanner.nextLine().trim());
         if (borrowerId <= 0) {
@@ -151,7 +133,6 @@ public class LoanMenu {
             return;
         }
 
-        // Step 3: Collect loan details
         BigDecimal principal = readBigDecimal("Enter Principal Amount (e.g. 50000): ");
 
         System.out.println("Interest Types:");
@@ -213,7 +194,6 @@ public class LoanMenu {
             remarks = null;
         }
 
-        // Step 4: Calculate totals and show summary
         BigDecimal totalInterest;
         try {
             totalInterest = loanService.calculateTotalInterest(principal, interestRate, ratePeriod, interestType, durationMonths);
@@ -255,7 +235,6 @@ public class LoanMenu {
             return;
         }
 
-        // Step 5: Save loan to database
         try {
             Loan loan = new Loan(borrowerId, principal, interestType, interestRate, ratePeriod,
                     durationMonths, totalInterest, totalPayable, totalPayable, startDate, dueDate, remarks);
@@ -274,9 +253,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 2: View All Loans
-    // -----------------------------------------------------------------
     private void handleViewAllLoans() {
         System.out.println("--- All Loans ---");
         try {
@@ -288,9 +264,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 3: Search Loans by Borrower
-    // -----------------------------------------------------------------
     private void handleSearchByBorrower() {
         System.out.println("--- Search Loans by Borrower ---");
         System.out.print("Enter Borrower ID: ");
@@ -320,9 +293,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 4: View Loan Details
-    // -----------------------------------------------------------------
     private void handleViewLoanDetails() {
         System.out.println("--- Loan Details ---");
         System.out.print("Enter Loan ID: ");
@@ -346,9 +316,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 5: View Active Loans
-    // -----------------------------------------------------------------
     private void handleViewActiveLoans() {
         System.out.println("--- Active Loans ---");
         try {
@@ -360,9 +327,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 6: View Completed Loans
-    // -----------------------------------------------------------------
     private void handleViewCompletedLoans() {
         System.out.println("--- Completed Loans ---");
         try {
@@ -374,9 +338,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Option 7: Update Loan Status
-    // -----------------------------------------------------------------
     private void handleUpdateLoanStatus() {
         System.out.println("--- Update Loan Status ---");
         System.out.print("Enter Loan ID: ");
@@ -438,9 +399,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Print a table of loans
-    // -----------------------------------------------------------------
     private void printLoanTable(List<Loan> loans) {
         if (loans == null || loans.isEmpty()) {
             System.out.println("No loans found.");
@@ -472,9 +430,6 @@ public class LoanMenu {
         System.out.println();
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Print full details of one loan (vertical layout)
-    // -----------------------------------------------------------------
     private void printLoanDetails(Loan l) {
         BigDecimal monthlyInstallment = l.getTotalPayable().divide(
                 new BigDecimal(l.getDurationMonths()), 2, RoundingMode.HALF_UP);
@@ -504,9 +459,6 @@ public class LoanMenu {
         System.out.println();
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Print a compact borrower list for loan creation
-    // -----------------------------------------------------------------
     private void printBorrowerList(List<Borrower> borrowers) {
         System.out.println("+-----+----------------------+-----------------+");
         System.out.printf("| %-3s | %-20s | %-15s |%n", "ID", "Full Name", "Phone");
@@ -521,9 +473,6 @@ public class LoanMenu {
         System.out.println();
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Read a valid BigDecimal from the user
-    // -----------------------------------------------------------------
     private BigDecimal readBigDecimal(String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -537,9 +486,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Read a date from user, with a default value
-    // -----------------------------------------------------------------
     private LocalDate readDate(String prompt, LocalDate defaultValue) {
         System.out.print(prompt);
         String input = scanner.nextLine().trim();
@@ -554,9 +500,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Format interest type for display
-    // -----------------------------------------------------------------
     private String formatInterestType(String interestType) {
         if (interestType == null) return "-";
         switch (interestType.toLowerCase()) {
@@ -567,9 +510,6 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Format rate period for display
-    // -----------------------------------------------------------------
     private String formatRatePeriod(String ratePeriod) {
         if (ratePeriod == null) return "-";
         switch (ratePeriod.toLowerCase()) {
@@ -581,25 +521,16 @@ public class LoanMenu {
         }
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Format BigDecimal as money string for display
-    // -----------------------------------------------------------------
     private String formatMoney(BigDecimal amount) {
         if (amount == null) return "0.00";
         return String.format("%,.2f", amount.doubleValue());
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Truncate a string to a maximum length
-    // -----------------------------------------------------------------
     private String truncate(String s, int maxLen) {
         if (s == null) return "";
         return s.length() > maxLen ? s.substring(0, maxLen - 3) + "..." : s;
     }
 
-    // -----------------------------------------------------------------
-    // Helper: Parse integer from string; returns -1 on failure
-    // -----------------------------------------------------------------
     private int parseChoice(String input) {
         try {
             return Integer.parseInt(input);

@@ -1,8 +1,5 @@
 package com.loanledger.exception;
 
-/**
- * LoanNotFoundException — Thrown when a loan record cannot be found by its ID.
- */
 public class LoanNotFoundException extends RuntimeException {
 
     public LoanNotFoundException(String message) {

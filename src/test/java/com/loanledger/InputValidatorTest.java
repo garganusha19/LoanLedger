@@ -70,4 +70,3 @@ class InputValidatorTest {
         assertThrows(ValidationException.class, () -> InputValidator.validatePositiveId(-5, "Test ID"));
     }
 }
-

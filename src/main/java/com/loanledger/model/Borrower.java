@@ -4,14 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Borrower — Model Entity representing a borrower profile.
- *
- * Responsibilities:
- * - POJO holding borrower data.
- * - Encapsulated with private fields, getters, and setters.
- * - Contains NO business logic, NO SQL queries, and NO console I/O.
- */
 public class Borrower {
 
     private int id;
@@ -20,7 +12,7 @@ public class Borrower {
     private String address;
     private String idNumber;
     private LocalDate dateRegistered;
-    private String status; // 'active' or 'inactive'
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -51,7 +43,6 @@ public class Borrower {
         this.updatedAt = updatedAt;
     }
 
-    // Getters and Setters
     public int getId() {
         return id;
     }
@@ -156,4 +147,3 @@ public class Borrower {
                 '}';
     }
 }
-

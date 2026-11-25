@@ -10,30 +10,16 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Scanner;
 
-/**
- * Main.java — Application Entry Point
- *
- * This is the first class Java runs when the program starts.
- * It performs:
- * 1. Displays the startup banner.
- * 2. Tests the MySQL database connection.
- * 3. Presents the main menu and routes to respective modules.
- */
 public class Main {
 
     public static void main(String[] args) {
         printBanner();
 
-        // Test database connection at startup
         boolean connected = testDatabaseConnection();
 
-        // Show the main menu
         showMainMenu(connected);
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 1: printBanner
-    // -----------------------------------------------------------------
     private static void printBanner() {
         System.out.println("============================================");
         System.out.println("             LOANLEDGER v1.0               ");
@@ -42,9 +28,6 @@ public class Main {
         System.out.println();
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 2: testDatabaseConnection
-    // -----------------------------------------------------------------
     public static boolean testDatabaseConnection() {
         System.out.println("Testing database connection...");
 
@@ -64,9 +47,6 @@ public class Main {
         }
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 3: showMainMenu
-    // -----------------------------------------------------------------
     private static void showMainMenu(boolean connected) {
         Scanner scanner = new Scanner(System.in);
         BorrowerService borrowerService = new BorrowerService();
@@ -84,7 +64,7 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    // Phase 2: Borrower Management
+
                     BorrowerMenu borrowerMenu = new BorrowerMenu(borrowerService, scanner);
                     borrowerMenu.display();
                     break;
@@ -103,12 +83,12 @@ public class Main {
                     break;
 
                 case 5:
-                    // Retry DB Connection
+
                     connected = testDatabaseConnection();
                     break;
 
                 case 6:
-                    // Exit
+
                     System.out.println("Thank you for using LoanLedger. Goodbye!");
                     System.out.println();
                     running = false;
@@ -122,9 +102,6 @@ public class Main {
         }
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 4: printMenu
-    // -----------------------------------------------------------------
     private static void printMenu(String connectionStatus) {
         System.out.println("Database Connection: " + connectionStatus);
         System.out.println();
@@ -140,18 +117,12 @@ public class Main {
         System.out.print("Enter your choice: ");
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 5: showComingSoon
-    // -----------------------------------------------------------------
     private static void showComingSoon(String moduleName) {
         System.out.println("--- " + moduleName + " ---");
         System.out.println("This module is coming soon.");
         System.out.println();
     }
 
-    // -----------------------------------------------------------------
-    // METHOD 6: toNumber
-    // -----------------------------------------------------------------
     private static int toNumber(String input) {
         try {
             return Integer.parseInt(input);

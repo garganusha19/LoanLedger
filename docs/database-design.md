@@ -82,14 +82,15 @@ Records loans linked to borrowers with terms and calculated totals.
 - `principal_amount DECIMAL(15, 2) NOT NULL`
 - `interest_type ENUM('FLAT', 'REDUCING_BALANCE', 'SIMPLE') NOT NULL`
 - `interest_rate DECIMAL(5, 2) NOT NULL`
-- `rate_period ENUM('DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL') NOT NULL`
+- `rate_period ENUM('DAILY', 'WEEKLY', 'MONTHLY', 'ANNUAL', 'ANNUALLY') NOT NULL`
 - `term_months INT NOT NULL`
 - `total_interest DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
 - `total_payable DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
 - `outstanding_balance DECIMAL(15, 2) NOT NULL DEFAULT 0.00`
 - `start_date DATE NOT NULL`
 - `due_date DATE NOT NULL`
-- `status ENUM('active', 'closed', 'overdue') NOT NULL DEFAULT 'active'`
+- `status ENUM('active', 'closed', 'completed', 'overdue', 'defaulted') NOT NULL DEFAULT 'active'`
+- `remarks VARCHAR(255)`
 - `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`
 - `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
 

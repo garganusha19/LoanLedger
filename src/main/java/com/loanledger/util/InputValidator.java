@@ -5,22 +5,12 @@ import com.loanledger.exception.ValidationException;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
-/**
- * InputValidator — Utility for validating user inputs and domain formats.
- *
- * Responsibilities:
- * - Checks for non-empty fields, valid phone numbers, names, and ID numbers.
- * - Throws ValidationException with informative messages on validation failure.
- */
 public class InputValidator {
 
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[0-9]{10,15}$");
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s.'\\-]{2,100}$");
     private static final Pattern ID_NUMBER_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]{3,50}$");
 
-    /**
-     * Validates borrower full name.
-     */
     public static void validateFullName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new ValidationException("Full name is required and cannot be empty.");
@@ -34,9 +24,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates borrower phone number.
-     */
     public static void validatePhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) {
             throw new ValidationException("Phone number is required and cannot be empty.");
@@ -47,9 +34,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates borrower residential or business address.
-     */
     public static void validateAddress(String address) {
         if (address == null || address.trim().isEmpty()) {
             throw new ValidationException("Address is required and cannot be empty.");
@@ -60,9 +44,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates borrower government or national identity number.
-     */
     public static void validateIdNumber(String idNumber) {
         if (idNumber == null || idNumber.trim().isEmpty()) {
             throw new ValidationException("Government ID number is required and cannot be empty.");
@@ -73,18 +54,12 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates positive entity ID.
-     */
     public static void validatePositiveId(int id, String fieldName) {
         if (id <= 0) {
             throw new ValidationException(fieldName + " must be a positive integer greater than 0.");
         }
     }
 
-    /**
-     * Validates all fields for a Borrower entity.
-     */
     public static void validateBorrower(String fullName, String phone, String address, String idNumber) {
         validateFullName(fullName);
         validatePhone(phone);
@@ -92,9 +67,6 @@ public class InputValidator {
         validateIdNumber(idNumber);
     }
 
-    /**
-     * Validates loan principal amount.
-     */
     public static void validatePrincipal(BigDecimal principal) {
         if (principal == null) {
             throw new ValidationException("Principal amount is required.");
@@ -104,9 +76,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates loan interest rate.
-     */
     public static void validateInterestRate(BigDecimal rate) {
         if (rate == null) {
             throw new ValidationException("Interest rate is required.");
@@ -119,9 +88,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates loan duration in months.
-     */
     public static void validateDurationMonths(int months) {
         if (months < 1) {
             throw new ValidationException("Loan duration must be at least 1 month.");
@@ -131,9 +97,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates interest type value.
-     */
     public static void validateInterestType(String interestType) {
         if (interestType == null || interestType.trim().isEmpty()) {
             throw new ValidationException("Interest type is required.");
@@ -144,9 +107,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates rate period value.
-     */
     public static void validateRatePeriod(String ratePeriod) {
         if (ratePeriod == null || ratePeriod.trim().isEmpty()) {
             throw new ValidationException("Rate period is required.");
@@ -157,9 +117,6 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Validates loan status value.
-     */
     public static void validateLoanStatus(String status) {
         if (status == null || status.trim().isEmpty()) {
             throw new ValidationException("Loan status is required.");
@@ -174,4 +131,3 @@ public class InputValidator {
         throw new UnsupportedOperationException("Utility class cannot be instantiated.");
     }
 }
-

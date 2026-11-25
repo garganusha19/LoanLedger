@@ -5,35 +5,26 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Loan — Model Entity representing a loan record.
- *
- * Responsibilities:
- * - POJO holding loan data fetched from or saved to the database.
- * - Encapsulated with private fields, getters, and setters.
- * - Contains NO business logic, NO SQL queries, and NO console I/O.
- */
 public class Loan {
 
     private int id;
     private int borrowerId;
-    private String borrowerName;      // Fetched via JOIN, not stored in loans table
+    private String borrowerName;
     private BigDecimal principal;
-    private String interestType;      // 'flat', 'simple', 'reducing_balance'
-    private BigDecimal interestRate;  // Stored as percentage, e.g. 5.00 means 5%
-    private String ratePeriod;        // 'daily', 'weekly', 'monthly', 'annually'
+    private String interestType;
+    private BigDecimal interestRate;
+    private String ratePeriod;
     private int durationMonths;
     private BigDecimal totalInterest;
     private BigDecimal totalPayable;
     private BigDecimal outstandingBalance;
     private LocalDate startDate;
     private LocalDate dueDate;
-    private String status;            // 'active', 'completed', 'defaulted'
+    private String status;
     private String remarks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Constructor 1: Default — sets sensible defaults for a new loan
     public Loan() {
         this.status = "active";
         this.interestType = "flat";
@@ -41,7 +32,6 @@ public class Loan {
         this.startDate = LocalDate.now();
     }
 
-    // Constructor 2: Create-new loan — used when registering a new loan
     public Loan(int borrowerId, BigDecimal principal, String interestType,
                 BigDecimal interestRate, String ratePeriod, int durationMonths,
                 BigDecimal totalInterest, BigDecimal totalPayable,
@@ -62,7 +52,6 @@ public class Loan {
         this.status = "active";
     }
 
-    // Constructor 3: Full/DB constructor — used when mapping rows from the database
     public Loan(int id, int borrowerId, String borrowerName, BigDecimal principal,
                 String interestType, BigDecimal interestRate, String ratePeriod,
                 int durationMonths, BigDecimal totalInterest, BigDecimal totalPayable,
@@ -86,8 +75,6 @@ public class Loan {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
-
-    // Getters and Setters
 
     public int getId() {
         return id;
@@ -225,7 +212,6 @@ public class Loan {
         this.updatedAt = updatedAt;
     }
 
-    // Returns true if this loan is currently active
     public boolean isActive() {
         return "active".equalsIgnoreCase(status);
     }

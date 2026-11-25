@@ -9,15 +9,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * BorrowerMenu — Console UI for Borrower Management
- *
- * Responsibilities:
- * - Displays borrower management options.
- * - Prompts user for input and passes data to BorrowerService.
- * - Catches and displays user-friendly validation and database errors.
- * - Contains NO direct SQL queries or database connections.
- */
 public class BorrowerMenu {
 
     private final BorrowerService borrowerService;
@@ -28,9 +19,6 @@ public class BorrowerMenu {
         this.scanner = scanner;
     }
 
-    /**
-     * Entry point to show and handle the borrower management menu.
-     */
     public void display() {
         boolean back = false;
 
@@ -82,9 +70,6 @@ public class BorrowerMenu {
         System.out.println("============================================");
     }
 
-    /**
-     * Option 1: Register New Borrower
-     */
     private void handleRegisterBorrower() {
         System.out.println("--- Register New Borrower ---");
 
@@ -120,9 +105,6 @@ public class BorrowerMenu {
         }
     }
 
-    /**
-     * Option 2: View All Active Borrowers
-     */
     private void handleViewAllBorrowers() {
         System.out.println("--- Active Borrowers ---");
         try {
@@ -134,9 +116,6 @@ public class BorrowerMenu {
         }
     }
 
-    /**
-     * Option 3: Search Borrower
-     */
     private void handleSearchBorrower() {
         System.out.println("--- Search Borrower ---");
         System.out.print("Enter search query (Name, ID, or Phone): ");
@@ -151,9 +130,6 @@ public class BorrowerMenu {
         }
     }
 
-    /**
-     * Option 4: Update Borrower Contact Info
-     */
     private void handleUpdateBorrower() {
         System.out.println("--- Update Borrower ---");
         System.out.print("Enter Borrower ID to update: ");
@@ -209,9 +185,6 @@ public class BorrowerMenu {
         }
     }
 
-    /**
-     * Option 5: Deactivate Borrower (Soft Delete)
-     */
     private void handleDeactivateBorrower() {
         System.out.println("--- Deactivate Borrower ---");
         System.out.print("Enter Borrower ID to deactivate: ");
@@ -254,9 +227,6 @@ public class BorrowerMenu {
         }
     }
 
-    /**
-     * Formats and prints a list of borrowers in a clean console table.
-     */
     private void printBorrowerTable(List<Borrower> borrowers) {
         if (borrowers == null || borrowers.isEmpty()) {
             System.out.println("No borrowers found.");
@@ -294,4 +264,3 @@ public class BorrowerMenu {
         }
     }
 }
-
