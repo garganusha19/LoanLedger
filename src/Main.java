@@ -1,11 +1,3 @@
-package com.loanledger;
-
-import com.loanledger.service.BorrowerService;
-import com.loanledger.service.LoanService;
-import com.loanledger.ui.BorrowerMenu;
-import com.loanledger.ui.LoanMenu;
-import com.loanledger.util.DBConnection;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Scanner;
@@ -41,7 +33,6 @@ public class Main {
         } catch (SQLException e) {
             System.out.println("Database Connection: FAILED");
             System.out.println("Reason: " + e.getMessage());
-            System.out.println("Please check src/main/resources/application.properties.");
             System.out.println();
             return false;
         }
@@ -64,7 +55,6 @@ public class Main {
 
             switch (choice) {
                 case 1:
-
                     BorrowerMenu borrowerMenu = new BorrowerMenu(borrowerService, scanner);
                     borrowerMenu.display();
                     break;
@@ -83,12 +73,10 @@ public class Main {
                     break;
 
                 case 5:
-
                     connected = testDatabaseConnection();
                     break;
 
                 case 6:
-
                     System.out.println("Thank you for using LoanLedger. Goodbye!");
                     System.out.println();
                     running = false;

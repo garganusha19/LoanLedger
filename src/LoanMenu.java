@@ -1,13 +1,3 @@
-package com.loanledger.ui;
-
-import com.loanledger.exception.BorrowerNotFoundException;
-import com.loanledger.exception.LoanNotFoundException;
-import com.loanledger.exception.ValidationException;
-import com.loanledger.model.Borrower;
-import com.loanledger.model.Loan;
-import com.loanledger.service.BorrowerService;
-import com.loanledger.service.LoanService;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
@@ -18,9 +8,9 @@ import java.util.Scanner;
 
 public class LoanMenu {
 
-    private final LoanService loanService;
-    private final BorrowerService borrowerService;
-    private final Scanner scanner;
+    private LoanService loanService;
+    private BorrowerService borrowerService;
+    private Scanner scanner;
 
     public LoanMenu(LoanService loanService, BorrowerService borrowerService, Scanner scanner) {
         this.loanService = loanService;
@@ -37,7 +27,7 @@ public class LoanMenu {
             String input = scanner.nextLine().trim();
             System.out.println();
 
-            int choice = parseChoice(input);
+            int choice = toInt(input);
 
             switch (choice) {
                 case 1:
@@ -65,7 +55,7 @@ public class LoanMenu {
                     back = true;
                     break;
                 default:
-                    System.out.println("Invalid choice. Please select an option between 1 and 8.");
+                    System.out.println("Invalid choice. Enter a number between 1 and 8.");
                     System.out.println();
                     break;
             }
@@ -91,14 +81,13 @@ public class LoanMenu {
         System.out.println("--- Create New Loan ---");
 
         try {
-            List<Borrower> activeBorrowers = borrowerService.getAllActiveBorrowers();
-            if (activeBorrowers.isEmpty()) {
-                System.out.println("No active borrowers found. Please register a borrower first.");
+            List<Borrower> borrowers = borrowerService.getAllActiveBorrowers();
+            if (borrowers.isEmpty()) {
+                System.out.println("No active borrowers found. Please add a borrower first.");
                 System.out.println();
                 return;
             }
-            System.out.println("Active Borrowers:");
-            printBorrowerList(activeBorrowers);
+            printBorrowerList(borrowers);
         } catch (SQLException e) {
             System.out.println("[Database Error] Could not load borrowers: " + e.getMessage());
             System.out.println();
@@ -106,7 +95,7 @@ public class LoanMenu {
         }
 
         System.out.print("Enter Borrower ID: ");
-        int borrowerId = parseChoice(scanner.nextLine().trim());
+        int borrowerId = toInt(scanner.nextLine().trim());
         if (borrowerId <= 0) {
             System.out.println("Invalid Borrower ID.");
             System.out.println();
@@ -117,67 +106,49 @@ public class LoanMenu {
         try {
             borrower = borrowerService.getBorrowerById(borrowerId);
             if (!borrower.isActive()) {
-                System.out.println("[Error] Borrower ID " + borrowerId + " is inactive and cannot take a new loan.");
+                System.out.println("[Error] Borrower ID " + borrowerId + " is inactive.");
                 System.out.println();
                 return;
             }
-            System.out.println("Selected Borrower: " + borrower.getFullName());
+            System.out.println("Selected: " + borrower.getFullName());
             System.out.println();
-        } catch (BorrowerNotFoundException e) {
+        } catch (IllegalArgumentException | SQLException e) {
             System.out.println("[Error] " + e.getMessage());
-            System.out.println();
-            return;
-        } catch (SQLException e) {
-            System.out.println("[Database Error] " + e.getMessage());
             System.out.println();
             return;
         }
 
         BigDecimal principal = readBigDecimal("Enter Principal Amount (e.g. 50000): ");
 
-        System.out.println("Interest Types:");
-        System.out.println("  1. Flat");
-        System.out.println("  2. Simple");
-        System.out.println("  3. Reducing Balance");
-        System.out.print("Select Interest Type (1-3): ");
-        int typeChoice = parseChoice(scanner.nextLine().trim());
+        System.out.println("Interest Type:  1. Flat  2. Simple  3. Reducing Balance");
+        System.out.print("Select (1-3): ");
+        int typeChoice = toInt(scanner.nextLine().trim());
         String interestType;
-        if (typeChoice == 1) {
-            interestType = "flat";
-        } else if (typeChoice == 2) {
-            interestType = "simple";
-        } else if (typeChoice == 3) {
-            interestType = "reducing_balance";
-        } else {
+        if (typeChoice == 1)      interestType = "flat";
+        else if (typeChoice == 2) interestType = "simple";
+        else if (typeChoice == 3) interestType = "reducing_balance";
+        else {
             System.out.println("Invalid selection. Defaulting to Flat.");
             interestType = "flat";
         }
 
-        BigDecimal interestRate = readBigDecimal("Enter Interest Rate (%) (e.g. 5.00): ");
+        BigDecimal interestRate = readBigDecimal("Enter Interest Rate % (e.g. 5.00): ");
 
-        System.out.println("Rate Period:");
-        System.out.println("  1. Daily");
-        System.out.println("  2. Weekly");
-        System.out.println("  3. Monthly");
-        System.out.println("  4. Annually");
-        System.out.print("Select Rate Period (1-4): ");
-        int periodChoice = parseChoice(scanner.nextLine().trim());
+        System.out.println("Rate Period:  1. Daily  2. Weekly  3. Monthly  4. Annually");
+        System.out.print("Select (1-4): ");
+        int periodChoice = toInt(scanner.nextLine().trim());
         String ratePeriod;
-        if (periodChoice == 1) {
-            ratePeriod = "daily";
-        } else if (periodChoice == 2) {
-            ratePeriod = "weekly";
-        } else if (periodChoice == 3) {
-            ratePeriod = "monthly";
-        } else if (periodChoice == 4) {
-            ratePeriod = "annually";
-        } else {
+        if (periodChoice == 1)      ratePeriod = "daily";
+        else if (periodChoice == 2) ratePeriod = "weekly";
+        else if (periodChoice == 3) ratePeriod = "monthly";
+        else if (periodChoice == 4) ratePeriod = "annually";
+        else {
             System.out.println("Invalid selection. Defaulting to Monthly.");
             ratePeriod = "monthly";
         }
 
-        System.out.print("Enter Loan Duration (months, e.g. 12): ");
-        int durationMonths = parseChoice(scanner.nextLine().trim());
+        System.out.print("Enter Duration in Months (e.g. 12): ");
+        int durationMonths = toInt(scanner.nextLine().trim());
         if (durationMonths <= 0) {
             System.out.println("Invalid duration.");
             System.out.println();
@@ -185,14 +156,12 @@ public class LoanMenu {
         }
 
         LocalDate startDate = readDate("Enter Start Date [YYYY-MM-DD] (press Enter for today): ", LocalDate.now());
-        LocalDate dueDate = startDate.plusMonths(durationMonths);
-        System.out.println("Calculated Due Date: " + dueDate);
+        LocalDate dueDate   = startDate.plusMonths(durationMonths);
+        System.out.println("Due Date (auto-calculated): " + dueDate);
 
         System.out.print("Enter Remarks (optional, press Enter to skip): ");
         String remarks = scanner.nextLine().trim();
-        if (remarks.isEmpty()) {
-            remarks = null;
-        }
+        if (remarks.isEmpty()) remarks = null;
 
         BigDecimal totalInterest;
         try {
@@ -209,28 +178,26 @@ public class LoanMenu {
         System.out.println();
         System.out.println("--- Loan Summary ---");
         System.out.println("Borrower       : " + borrower.getFullName() + " (ID: " + borrowerId + ")");
-        System.out.println("Principal      : " + formatMoney(principal));
-        System.out.println("Interest Type  : " + formatInterestType(interestType));
-        System.out.println("Interest Rate  : " + interestRate + "% per " + formatRatePeriod(ratePeriod));
+        System.out.println("Principal      : " + money(principal));
+        System.out.println("Interest Type  : " + formatType(interestType));
+        System.out.println("Interest Rate  : " + interestRate + "% per " + formatPeriod(ratePeriod));
         System.out.println("Duration       : " + durationMonths + " month(s)");
-        System.out.println("Total Interest : " + formatMoney(totalInterest));
-        System.out.println("Total Payable  : " + formatMoney(totalPayable));
-        System.out.println("Est. Monthly   : " + formatMoney(monthlyInstallment));
+        System.out.println("Total Interest : " + money(totalInterest));
+        System.out.println("Total Payable  : " + money(totalPayable));
+        System.out.println("Est. Monthly   : " + money(monthlyInstallment));
         System.out.println("Start Date     : " + startDate);
         System.out.println("Due Date       : " + dueDate);
 
         if ("reducing_balance".equalsIgnoreCase(interestType)) {
-            System.out.println();
-            System.out.println("[Note] Reducing balance total is an estimate based on the amortization formula.");
-            System.out.println("       Actual interest depends on the payment schedule.");
+            System.out.println("[Note] Reducing balance total is an estimate. Actual interest depends on payment schedule.");
         }
 
         System.out.println();
-        System.out.print("Confirm and save this loan? (y/n): ");
+        System.out.print("Save this loan? (y/n): ");
         String confirm = scanner.nextLine().trim();
 
         if (!"y".equalsIgnoreCase(confirm) && !"yes".equalsIgnoreCase(confirm)) {
-            System.out.println("Loan creation cancelled.");
+            System.out.println("Cancelled.");
             System.out.println();
             return;
         }
@@ -240,15 +207,14 @@ public class LoanMenu {
                     durationMonths, totalInterest, totalPayable, totalPayable, startDate, dueDate, remarks);
 
             Loan saved = loanService.createLoan(loan);
-            System.out.println();
-            System.out.println("Loan created successfully! Loan ID: " + saved.getId());
+            System.out.println("Loan created! Loan ID: " + saved.getId());
             System.out.println();
 
-        } catch (ValidationException e) {
-            System.out.println("[Validation Error] " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.out.println("[Error] " + e.getMessage());
             System.out.println();
         } catch (SQLException e) {
-            System.out.println("[Database Error] Could not save loan: " + e.getMessage());
+            System.out.println("[Database Error] " + e.getMessage());
             System.out.println();
         }
     }
@@ -267,7 +233,7 @@ public class LoanMenu {
     private void handleSearchByBorrower() {
         System.out.println("--- Search Loans by Borrower ---");
         System.out.print("Enter Borrower ID: ");
-        int borrowerId = parseChoice(scanner.nextLine().trim());
+        int borrowerId = toInt(scanner.nextLine().trim());
 
         if (borrowerId <= 0) {
             System.out.println("Invalid Borrower ID.");
@@ -281,12 +247,8 @@ public class LoanMenu {
                 System.out.println("No loans found for Borrower ID " + borrowerId + ".");
                 System.out.println();
             } else {
-                System.out.println("Loans for Borrower ID " + borrowerId + ":");
                 printLoanTable(loans);
             }
-        } catch (ValidationException e) {
-            System.out.println("[Validation Error] " + e.getMessage());
-            System.out.println();
         } catch (SQLException e) {
             System.out.println("[Database Error] " + e.getMessage());
             System.out.println();
@@ -296,7 +258,7 @@ public class LoanMenu {
     private void handleViewLoanDetails() {
         System.out.println("--- Loan Details ---");
         System.out.print("Enter Loan ID: ");
-        int loanId = parseChoice(scanner.nextLine().trim());
+        int loanId = toInt(scanner.nextLine().trim());
 
         if (loanId <= 0) {
             System.out.println("Invalid Loan ID.");
@@ -307,7 +269,7 @@ public class LoanMenu {
         try {
             Loan loan = loanService.getLoanById(loanId);
             printLoanDetails(loan);
-        } catch (LoanNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("[Error] " + e.getMessage());
             System.out.println();
         } catch (SQLException e) {
@@ -341,7 +303,7 @@ public class LoanMenu {
     private void handleUpdateLoanStatus() {
         System.out.println("--- Update Loan Status ---");
         System.out.print("Enter Loan ID: ");
-        int loanId = parseChoice(scanner.nextLine().trim());
+        int loanId = toInt(scanner.nextLine().trim());
 
         if (loanId <= 0) {
             System.out.println("Invalid Loan ID.");
@@ -351,26 +313,20 @@ public class LoanMenu {
 
         try {
             Loan loan = loanService.getLoanById(loanId);
-            System.out.println("Loan ID     : " + loan.getId());
-            System.out.println("Borrower    : " + (loan.getBorrowerName() != null ? loan.getBorrowerName() : "ID " + loan.getBorrowerId()));
-            System.out.println("Current Status: " + loan.getStatus());
+            System.out.println("Loan ID: " + loan.getId() + " | Borrower: "
+                    + (loan.getBorrowerName() != null ? loan.getBorrowerName() : "ID " + loan.getBorrowerId())
+                    + " | Current Status: " + loan.getStatus());
             System.out.println();
 
-            System.out.println("New Status:");
-            System.out.println("  1. Active");
-            System.out.println("  2. Completed");
-            System.out.println("  3. Defaulted");
-            System.out.print("Select new status (1-3): ");
-            int statusChoice = parseChoice(scanner.nextLine().trim());
+            System.out.println("New Status:  1. Active  2. Completed  3. Defaulted");
+            System.out.print("Select (1-3): ");
+            int statusChoice = toInt(scanner.nextLine().trim());
 
             String newStatus;
-            if (statusChoice == 1) {
-                newStatus = "active";
-            } else if (statusChoice == 2) {
-                newStatus = "completed";
-            } else if (statusChoice == 3) {
-                newStatus = "defaulted";
-            } else {
+            if (statusChoice == 1)      newStatus = "active";
+            else if (statusChoice == 2) newStatus = "completed";
+            else if (statusChoice == 3) newStatus = "defaulted";
+            else {
                 System.out.println("Invalid selection. No changes made.");
                 System.out.println();
                 return;
@@ -383,15 +339,12 @@ public class LoanMenu {
                 loanService.updateLoanStatus(loanId, newStatus);
                 System.out.println("Loan ID " + loanId + " status updated to '" + newStatus + "'.");
             } else {
-                System.out.println("Update cancelled.");
+                System.out.println("Cancelled.");
             }
             System.out.println();
 
-        } catch (LoanNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("[Error] " + e.getMessage());
-            System.out.println();
-        } catch (ValidationException e) {
-            System.out.println("[Validation Error] " + e.getMessage());
             System.out.println();
         } catch (SQLException e) {
             System.out.println("[Database Error] " + e.getMessage());
@@ -406,34 +359,33 @@ public class LoanMenu {
             return;
         }
 
-        System.out.println("+-----+----------------------+--------------+--------------+------+----------+--------+--------------+-----------+");
-        System.out.printf("| %-3s | %-20s | %-12s | %-12s | %-4s | %-8s | %-6s | %-12s | %-9s |%n",
-                "ID", "Borrower", "Principal", "Total Payable", "Rate", "Period", "Months", "Due Date", "Status");
-        System.out.println("+-----+----------------------+--------------+--------------+------+----------+--------+--------------+-----------+");
+        System.out.println("+-----+----------------------+--------------+--------------+--------+----------+--------+--------------+-----------+");
+        System.out.printf("| %-3s | %-20s | %-12s | %-12s | %-6s | %-8s | %-6s | %-12s | %-9s |%n",
+                "ID", "Borrower", "Principal", "Total Payable", "Rate%", "Period", "Months", "Due Date", "Status");
+        System.out.println("+-----+----------------------+--------------+--------------+--------+----------+--------+--------------+-----------+");
 
         for (Loan l : loans) {
             String name = l.getBorrowerName() != null ? l.getBorrowerName() : "ID:" + l.getBorrowerId();
-            System.out.printf("| %-3d | %-20s | %-12s | %-12s | %-4s | %-8s | %-6d | %-12s | %-9s |%n",
+            System.out.printf("| %-3d | %-20s | %-12s | %-12s | %-6s | %-8s | %-6d | %-12s | %-9s |%n",
                     l.getId(),
-                    truncate(name, 20),
-                    formatMoney(l.getPrincipal()),
-                    formatMoney(l.getTotalPayable()),
-                    l.getInterestRate().stripTrailingZeros().toPlainString() + "%",
-                    formatRatePeriod(l.getRatePeriod()),
+                    shorten(name, 20),
+                    money(l.getPrincipal()),
+                    money(l.getTotalPayable()),
+                    l.getInterestRate().stripTrailingZeros().toPlainString(),
+                    formatPeriod(l.getRatePeriod()),
                     l.getDurationMonths(),
                     l.getDueDate() != null ? l.getDueDate().toString() : "-",
                     l.getStatus());
         }
 
-        System.out.println("+-----+----------------------+--------------+--------------+------+----------+--------+--------------+-----------+");
-        System.out.println("Total loans displayed: " + loans.size());
+        System.out.println("+-----+----------------------+--------------+--------------+--------+----------+--------+--------------+-----------+");
+        System.out.println("Total: " + loans.size() + " loan(s)");
         System.out.println();
     }
 
     private void printLoanDetails(Loan l) {
-        BigDecimal monthlyInstallment = l.getTotalPayable().divide(
-                new BigDecimal(l.getDurationMonths()), 2, RoundingMode.HALF_UP);
-
+        BigDecimal monthlyInstallment = l.getTotalPayable()
+                .divide(new BigDecimal(l.getDurationMonths()), 2, RoundingMode.HALF_UP);
         String name = l.getBorrowerName() != null ? l.getBorrowerName() : "ID: " + l.getBorrowerId();
 
         System.out.println("============================================");
@@ -441,15 +393,15 @@ public class LoanMenu {
         System.out.println("============================================");
         System.out.println("Loan ID           : " + l.getId());
         System.out.println("Borrower          : " + name + " (ID: " + l.getBorrowerId() + ")");
-        System.out.println("Principal         : " + formatMoney(l.getPrincipal()));
-        System.out.println("Interest Type     : " + formatInterestType(l.getInterestType()));
+        System.out.println("Principal         : " + money(l.getPrincipal()));
+        System.out.println("Interest Type     : " + formatType(l.getInterestType()));
         System.out.println("Interest Rate     : " + l.getInterestRate().stripTrailingZeros().toPlainString()
-                + "% per " + formatRatePeriod(l.getRatePeriod()));
+                + "% per " + formatPeriod(l.getRatePeriod()));
         System.out.println("Duration          : " + l.getDurationMonths() + " month(s)");
-        System.out.println("Total Interest    : " + formatMoney(l.getTotalInterest()));
-        System.out.println("Total Payable     : " + formatMoney(l.getTotalPayable()));
-        System.out.println("Outstanding Bal.  : " + formatMoney(l.getOutstandingBalance()));
-        System.out.println("Est. Monthly Inst.: " + formatMoney(monthlyInstallment));
+        System.out.println("Total Interest    : " + money(l.getTotalInterest()));
+        System.out.println("Total Payable     : " + money(l.getTotalPayable()));
+        System.out.println("Outstanding Bal.  : " + money(l.getOutstandingBalance()));
+        System.out.println("Est. Monthly Inst.: " + money(monthlyInstallment));
         System.out.println("Start Date        : " + (l.getStartDate() != null ? l.getStartDate() : "-"));
         System.out.println("Due Date          : " + (l.getDueDate() != null ? l.getDueDate() : "-"));
         System.out.println("Status            : " + l.getStatus());
@@ -465,9 +417,7 @@ public class LoanMenu {
         System.out.println("+-----+----------------------+-----------------+");
         for (Borrower b : borrowers) {
             System.out.printf("| %-3d | %-20s | %-15s |%n",
-                    b.getId(),
-                    truncate(b.getFullName(), 20),
-                    b.getPhone());
+                    b.getId(), shorten(b.getFullName(), 20), b.getPhone());
         }
         System.out.println("+-----+----------------------+-----------------+");
         System.out.println();
@@ -478,10 +428,9 @@ public class LoanMenu {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
             try {
-                BigDecimal value = new BigDecimal(input);
-                return value;
+                return new BigDecimal(input);
             } catch (NumberFormatException e) {
-                System.out.println("Invalid number. Please enter a valid numeric value (e.g. 5000.00).");
+                System.out.println("Invalid number. Please enter a numeric value (e.g. 5000.00).");
             }
         }
     }
@@ -495,12 +444,12 @@ public class LoanMenu {
         try {
             return LocalDate.parse(input);
         } catch (DateTimeParseException e) {
-            System.out.println("Invalid date format. Using today's date: " + defaultValue);
+            System.out.println("Invalid date. Using today: " + defaultValue);
             return defaultValue;
         }
     }
 
-    private String formatInterestType(String interestType) {
+    private String formatType(String interestType) {
         if (interestType == null) return "-";
         switch (interestType.toLowerCase()) {
             case "flat":             return "Flat";
@@ -510,7 +459,7 @@ public class LoanMenu {
         }
     }
 
-    private String formatRatePeriod(String ratePeriod) {
+    private String formatPeriod(String ratePeriod) {
         if (ratePeriod == null) return "-";
         switch (ratePeriod.toLowerCase()) {
             case "daily":    return "Daily";
@@ -521,17 +470,17 @@ public class LoanMenu {
         }
     }
 
-    private String formatMoney(BigDecimal amount) {
+    private String money(BigDecimal amount) {
         if (amount == null) return "0.00";
         return String.format("%,.2f", amount.doubleValue());
     }
 
-    private String truncate(String s, int maxLen) {
-        if (s == null) return "";
-        return s.length() > maxLen ? s.substring(0, maxLen - 3) + "..." : s;
+    private String shorten(String text, int max) {
+        if (text == null) return "";
+        return text.length() > max ? text.substring(0, max - 3) + "..." : text;
     }
 
-    private int parseChoice(String input) {
+    private int toInt(String input) {
         try {
             return Integer.parseInt(input);
         } catch (NumberFormatException e) {
