@@ -42,6 +42,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         BorrowerService borrowerService = new BorrowerService();
         LoanService loanService = new LoanService();
+        InstalmentService instalmentService = new InstalmentService();
         boolean running = true;
 
         while (running) {
@@ -65,25 +66,30 @@ public class Main {
                     break;
 
                 case 3:
-                    showComingSoon("Payment Management");
+                    InstalmentMenu instalmentMenu = new InstalmentMenu(instalmentService, loanService, scanner);
+                    instalmentMenu.display();
                     break;
 
                 case 4:
-                    showComingSoon("Reports");
+                    showComingSoon("Payment Management");
                     break;
 
                 case 5:
-                    connected = testDatabaseConnection();
+                    showComingSoon("Reports");
                     break;
 
                 case 6:
+                    connected = testDatabaseConnection();
+                    break;
+
+                case 7:
                     System.out.println("Thank you for using LoanLedger. Goodbye!");
                     System.out.println();
                     running = false;
                     break;
 
                 default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 6.");
+                    System.out.println("Invalid choice. Please enter a number between 1 and 7.");
                     System.out.println();
                     break;
             }
@@ -97,10 +103,11 @@ public class Main {
         System.out.println();
         System.out.println("  1. Borrower Management");
         System.out.println("  2. Loan Management");
-        System.out.println("  3. Payment Management");
-        System.out.println("  4. Reports");
-        System.out.println("  5. Retry Database Connection");
-        System.out.println("  6. Exit");
+        System.out.println("  3. Instalment Management");
+        System.out.println("  4. Payment Management");
+        System.out.println("  5. Reports");
+        System.out.println("  6. Retry Database Connection");
+        System.out.println("  7. Exit");
         System.out.println();
         System.out.print("Enter your choice: ");
     }
