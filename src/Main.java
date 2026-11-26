@@ -9,7 +9,27 @@ public class Main {
 
         boolean connected = testDatabaseConnection();
 
-        showMainMenu(connected);
+        Scanner scanner = new Scanner(System.in);
+        AuthService authService = new AuthService();
+        LoginMenu loginMenu = new LoginMenu(authService, scanner);
+
+        boolean appRunning = true;
+
+        while (appRunning) {
+            boolean loggedIn = loginMenu.display();
+
+            if (!loggedIn) {
+                System.out.println("Thank you for using LoanLedger. Goodbye!");
+                System.out.println();
+                break;
+            }
+
+            boolean wantLoginAgain = showMainMenu(scanner, connected);
+
+            if (!wantLoginAgain) {
+                appRunning = false;
+            }
+        }
     }
 
     private static void printBanner() {
@@ -38,8 +58,7 @@ public class Main {
         }
     }
 
-    private static void showMainMenu(boolean connected) {
-        Scanner scanner = new Scanner(System.in);
+    private static boolean showMainMenu(Scanner scanner, boolean connected) {
         BorrowerService borrowerService = new BorrowerService();
         LoanService loanService = new LoanService();
         InstalmentService instalmentService = new InstalmentService();
@@ -79,17 +98,22 @@ public class Main {
                     break;
 
                 case 6:
+                    System.out.println("Logged out successfully.");
+                    System.out.println();
+                    return true;
+
+                case 7:
                     System.out.println("Thank you for using LoanLedger. Goodbye!");
                     System.out.println();
-                    running = false;
-                    break;
+                    return false;
 
                 default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 6.");
+                    System.out.println("Invalid choice. Please enter a number between 1 and 7.");
                     System.out.println();
                     break;
             }
         }
+        return false;
     }
 
     private static void printMenu(String connectionStatus) {
@@ -102,7 +126,8 @@ public class Main {
         System.out.println("  3. Instalment Management");
         System.out.println("  4. Payment Management");
         System.out.println("  5. Reports");
-        System.out.println("  6. Exit");
+        System.out.println("  6. Logout");
+        System.out.println("  7. Exit");
         System.out.println();
         System.out.print("Enter your choice: ");
     }
