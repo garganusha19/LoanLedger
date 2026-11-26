@@ -79,17 +79,13 @@ public class Main {
                     break;
 
                 case 6:
-                    connected = testDatabaseConnection();
-                    break;
-
-                case 7:
                     System.out.println("Thank you for using LoanLedger. Goodbye!");
                     System.out.println();
                     running = false;
                     break;
 
                 default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 7.");
+                    System.out.println("Invalid choice. Please enter a number between 1 and 6.");
                     System.out.println();
                     break;
             }
@@ -106,8 +102,7 @@ public class Main {
         System.out.println("  3. Instalment Management");
         System.out.println("  4. Payment Management");
         System.out.println("  5. Reports");
-        System.out.println("  6. Retry Database Connection");
-        System.out.println("  7. Exit");
+        System.out.println("  6. Exit");
         System.out.println();
         System.out.print("Enter your choice: ");
     }

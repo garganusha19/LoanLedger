@@ -81,7 +81,8 @@ public class BorrowerMenu {
         try {
             Borrower borrower = new Borrower(fullName, phone, address, idNumber);
             Borrower saved = borrowerService.registerBorrower(borrower);
-            System.out.println("Borrower added successfully! Borrower ID: " + saved.getId());
+            System.out.println("Borrower added successfully!");
+            System.out.println("Generated Borrower ID: " + saved.getId());
             System.out.println();
 
         } catch (IllegalArgumentException e) {
@@ -120,6 +121,11 @@ public class BorrowerMenu {
 
     private void handleUpdateBorrower() {
         System.out.println("--- Update Borrower ---");
+
+        if (!showActiveBorrowers()) {
+            return;
+        }
+
         System.out.print("Enter Borrower ID: ");
         int id = toInt(scanner.nextLine().trim());
 
@@ -173,6 +179,11 @@ public class BorrowerMenu {
 
     private void handleDeactivateBorrower() {
         System.out.println("--- Deactivate Borrower ---");
+
+        if (!showActiveBorrowers()) {
+            return;
+        }
+
         System.out.print("Enter Borrower ID: ");
         int id = toInt(scanner.nextLine().trim());
 
@@ -211,17 +222,45 @@ public class BorrowerMenu {
         }
     }
 
+    private boolean showActiveBorrowers() {
+        try {
+            List<Borrower> borrowers = borrowerService.getAllActiveBorrowers();
+            if (borrowers.isEmpty()) {
+                System.out.println("No active borrowers found.");
+                System.out.println();
+                return false;
+            }
+            System.out.println("Active Borrowers:");
+            System.out.println("+-----+----------------------+-----------------+");
+            System.out.printf("| %-3s | %-20s | %-15s |%n", "ID", "Full Name", "Phone");
+            System.out.println("+-----+----------------------+-----------------+");
+            for (Borrower b : borrowers) {
+                System.out.printf("| %-3d | %-20s | %-15s |%n",
+                        b.getId(), shorten(b.getFullName(), 20), b.getPhone());
+            }
+            System.out.println("+-----+----------------------+-----------------+");
+            System.out.println();
+            return true;
+        } catch (SQLException e) {
+            System.out.println("[Database Error] Could not load borrowers: " + e.getMessage());
+            System.out.println();
+            return false;
+        }
+    }
+
     private void printBorrowerTable(List<Borrower> borrowers) {
         if (borrowers == null || borrowers.isEmpty()) {
-            System.out.println("No borrowers found.");
+            System.out.println("No borrower found.");
             System.out.println();
             return;
         }
 
-        System.out.println("+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
+        System.out.println(
+                "+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
         System.out.printf("| %-3s | %-20s | %-15s | %-20s | %-13s | %-10s | %-8s |%n",
                 "ID", "Full Name", "Phone", "Address", "Gov ID", "Registered", "Status");
-        System.out.println("+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
+        System.out.println(
+                "+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
 
         for (Borrower b : borrowers) {
             System.out.printf("| %-3d | %-20s | %-15s | %-20s | %-13s | %-10s | %-8s |%n",
@@ -234,7 +273,8 @@ public class BorrowerMenu {
                     b.getStatus());
         }
 
-        System.out.println("+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
+        System.out.println(
+                "+-----+----------------------+-----------------+----------------------+---------------+------------+----------+");
         System.out.println("Total: " + borrowers.size() + " borrower(s)");
         System.out.println();
     }

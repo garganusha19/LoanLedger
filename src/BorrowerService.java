@@ -101,28 +101,30 @@ public class BorrowerService {
         List<Borrower> list = new ArrayList<>();
 
         if (query == null || query.trim().isEmpty()) {
-            return getAllActiveBorrowers();
+            return list;
         }
+
+        String trimmed = query.trim();
 
         int numericId = -1;
         try {
-            numericId = Integer.parseInt(query.trim());
+            numericId = Integer.parseInt(trimmed);
         } catch (NumberFormatException e) {
             // query is not a number
         }
 
-        String wildcard = "%" + query.trim() + "%";
+        String wildcard = "%" + trimmed + "%";
         String sql = "SELECT id, full_name, phone, address, id_number, date_registered, " +
                      "status, created_at, updated_at FROM borrowers " +
-                     "WHERE id = ? OR full_name LIKE ? OR phone LIKE ? OR id_number LIKE ? ORDER BY id ASC";
+                     "WHERE id = ? OR full_name LIKE ? OR phone = ? OR id_number = ? ORDER BY id ASC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, numericId);
             ps.setString(2, wildcard);
-            ps.setString(3, wildcard);
-            ps.setString(4, wildcard);
+            ps.setString(3, trimmed);
+            ps.setString(4, trimmed);
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
