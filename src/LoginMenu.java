@@ -11,7 +11,8 @@ public class LoginMenu {
         this.scanner = scanner;
     }
 
-    public boolean display() {
+
+    public Lender display() {
         while (true) {
             printAuthMenu();
             String input = scanner.nextLine().trim();
@@ -21,9 +22,9 @@ public class LoginMenu {
 
             switch (choice) {
                 case 1:
-                    boolean success = handleLogin();
-                    if (success) {
-                        return true;
+                    Lender lender = handleLogin();
+                    if (lender != null) {
+                        return lender;
                     }
                     break;
 
@@ -32,7 +33,7 @@ public class LoginMenu {
                     break;
 
                 case 3:
-                    return false;
+                    return null;
 
                 default:
                     System.out.println("Invalid choice. Please enter 1, 2, or 3.");
@@ -54,7 +55,8 @@ public class LoginMenu {
         System.out.print("Enter your choice: ");
     }
 
-    private boolean handleLogin() {
+
+    private Lender handleLogin() {
         System.out.print("Enter username: ");
         String username = scanner.nextLine().trim();
 
@@ -65,33 +67,34 @@ public class LoginMenu {
         if (username.isEmpty() || password.isEmpty()) {
             System.out.println("[Error] Username and password cannot be empty.");
             System.out.println();
-            return false;
+            return null;
         }
 
         try {
             int result = authService.login(username, password);
 
             if (result == AuthService.LOGIN_SUCCESS) {
+                Lender lender = authService.getLenderByUsername(username);
                 System.out.println("Login successful! Welcome, " + username + ".");
                 System.out.println();
-                return true;
+                return lender;
             } else if (result == AuthService.USER_NOT_FOUND) {
                 System.out.println("Account not found. Please sign up first.");
                 System.out.println();
-                return false;
+                return null;
             } else if (result == AuthService.INVALID_PASSWORD) {
                 System.out.println("Invalid password. Please try again.");
                 System.out.println();
-                return false;
+                return null;
             }
 
         } catch (SQLException e) {
             System.out.println("[Database Error] " + e.getMessage());
             System.out.println();
-            return false;
+            return null;
         }
 
-        return false;
+        return null;
     }
 
     private void handleSignUp() {

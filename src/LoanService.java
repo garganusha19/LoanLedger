@@ -13,32 +13,57 @@ import java.util.List;
 
 public class LoanService {
 
+    private final int lenderId;
+    private final BorrowerService borrowerService;
+
+    public LoanService(int lenderId) {
+        this.lenderId = lenderId;
+        this.borrowerService = new BorrowerService(lenderId);
+    }
+
+    public LoanService() {
+        this(0);
+    }
+
+    public int getLenderId() {
+        return lenderId;
+    }
+
     public Loan createLoan(Loan loan) throws SQLException {
         InputValidator.validatePrincipal(loan.getPrincipal());
         InputValidator.validateInterestRate(loan.getInterestRate());
         InputValidator.validateDurationMonths(loan.getDurationMonths());
 
-        String sql = "INSERT INTO loans (borrower_id, principal, interest_type, interest_rate, rate_period, " +
+        // Enforce that the borrower belongs to the logged-in lender
+        Borrower borrower = borrowerService.getBorrowerById(loan.getBorrowerId());
+        if (borrower == null || borrower.getLenderId() != this.lenderId) {
+            throw new IllegalArgumentException("Borrower not found with ID: " + loan.getBorrowerId());
+        }
+
+        loan.setLenderId(this.lenderId);
+
+        String sql = "INSERT INTO loans (lender_id, borrower_id, principal, interest_type, interest_rate, rate_period, " +
                      "duration_months, total_interest, total_payable, outstanding_balance, " +
                      "start_date, due_date, status, remarks) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setInt(1, loan.getBorrowerId());
-            ps.setBigDecimal(2, loan.getPrincipal());
-            ps.setString(3, loan.getInterestType());
-            ps.setBigDecimal(4, loan.getInterestRate());
-            ps.setString(5, loan.getRatePeriod());
-            ps.setInt(6, loan.getDurationMonths());
-            ps.setBigDecimal(7, loan.getTotalInterest());
-            ps.setBigDecimal(8, loan.getTotalPayable());
-            ps.setBigDecimal(9, loan.getOutstandingBalance());
-            ps.setDate(10, Date.valueOf(loan.getStartDate()));
-            ps.setDate(11, Date.valueOf(loan.getDueDate()));
-            ps.setString(12, "active");
-            ps.setString(13, loan.getRemarks());
+            ps.setInt(1, this.lenderId);
+            ps.setInt(2, loan.getBorrowerId());
+            ps.setBigDecimal(3, loan.getPrincipal());
+            ps.setString(4, loan.getInterestType());
+            ps.setBigDecimal(5, loan.getInterestRate());
+            ps.setString(6, loan.getRatePeriod());
+            ps.setInt(7, loan.getDurationMonths());
+            ps.setBigDecimal(8, loan.getTotalInterest());
+            ps.setBigDecimal(9, loan.getTotalPayable());
+            ps.setBigDecimal(10, loan.getOutstandingBalance());
+            ps.setDate(11, Date.valueOf(loan.getStartDate()));
+            ps.setDate(12, Date.valueOf(loan.getDueDate()));
+            ps.setString(13, "active");
+            ps.setString(14, loan.getRemarks());
 
             ps.executeUpdate();
 
@@ -53,36 +78,40 @@ public class LoanService {
 
     public List<Loan> getAllLoans() throws SQLException {
         List<Loan> list = new ArrayList<>();
-        String sql = "SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
+        String sql = "SELECT l.id, l.lender_id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
                      "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
                      "l.total_interest, l.total_payable, l.outstanding_balance, " +
                      "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
                      "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
-                     "ORDER BY l.id DESC";
+                     "WHERE l.lender_id = ? ORDER BY l.id DESC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(readLoan(rs));
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readLoan(rs));
+                }
             }
         }
         return list;
     }
 
     public Loan getLoanById(int id) throws SQLException {
-        String sql = "SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
+        String sql = "SELECT l.id, l.lender_id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
                      "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
                      "l.total_interest, l.total_payable, l.outstanding_balance, " +
                      "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
                      "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
-                     "WHERE l.id = ?";
+                     "WHERE l.id = ? AND l.lender_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
+            ps.setInt(2, this.lenderId);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -94,84 +123,108 @@ public class LoanService {
     }
 
     public List<Loan> getLoansByBorrowerId(int borrowerId) throws SQLException {
+        // Enforce that borrower belongs to this lender
+        borrowerService.getBorrowerById(borrowerId);
+
         List<Loan> list = new ArrayList<>();
-        String sql = "SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
+        String sql = "SELECT l.id, l.lender_id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
                      "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
                      "l.total_interest, l.total_payable, l.outstanding_balance, " +
                      "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
                      "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
-                     "WHERE l.borrower_id = ? ORDER BY l.id DESC";
+                     "WHERE l.borrower_id = ? AND l.lender_id = ? ORDER BY l.id DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, borrowerId);
-            ResultSet rs = ps.executeQuery();
+            ps.setInt(2, this.lenderId);
 
-            while (rs.next()) {
-                list.add(readLoan(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readLoan(rs));
+                }
             }
         }
         return list;
     }
 
-    public List<Loan> getAllActiveLoans() throws SQLException {
+
+    public List<Loan> getActiveLoans() throws SQLException {
         List<Loan> list = new ArrayList<>();
-        String sql = "SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
+        String sql = "SELECT l.id, l.lender_id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
                      "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
                      "l.total_interest, l.total_payable, l.outstanding_balance, " +
                      "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
                      "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
-                     "WHERE l.status = 'active' ORDER BY l.id DESC";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(readLoan(rs));
-            }
-        }
-        return list;
-    }
-
-    public List<Loan> getAllCompletedLoans() throws SQLException {
-        List<Loan> list = new ArrayList<>();
-        String sql = "SELECT l.id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
-                     "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
-                     "l.total_interest, l.total_payable, l.outstanding_balance, " +
-                     "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
-                     "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
-                     "WHERE l.status = 'completed' ORDER BY l.id DESC";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(readLoan(rs));
-            }
-        }
-        return list;
-    }
-
-    public void updateLoanStatus(int loanId, String newStatus) throws SQLException {
-        getLoanById(loanId);
-
-        String sql = "UPDATE loans SET status = ? WHERE id = ?";
+                     "WHERE l.status = 'active' AND l.lender_id = ? ORDER BY l.id DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, newStatus);
-            ps.setInt(2, loanId);
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readLoan(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+
+    public List<Loan> getAllActiveLoans() throws SQLException {
+        return getActiveLoans();
+    }
+
+    public List<Loan> getCompletedLoans() throws SQLException {
+        List<Loan> list = new ArrayList<>();
+        String sql = "SELECT l.id, l.lender_id, l.borrower_id, b.full_name AS borrower_name, l.principal, " +
+                     "l.interest_type, l.interest_rate, l.rate_period, l.duration_months, " +
+                     "l.total_interest, l.total_payable, l.outstanding_balance, " +
+                     "l.start_date, l.due_date, l.status, l.remarks, l.created_at, l.updated_at " +
+                     "FROM loans l LEFT JOIN borrowers b ON l.borrower_id = b.id " +
+                     "WHERE l.status = 'completed' AND l.lender_id = ? ORDER BY l.id DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readLoan(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+
+    public List<Loan> getAllCompletedLoans() throws SQLException {
+        return getCompletedLoans();
+    }
+
+
+    public void updateLoanStatus(int id, String status) throws SQLException {
+        getLoanById(id); // Enforces that loan exists and belongs to this lender!
+
+        String sql = "UPDATE loans SET status = ? WHERE id = ? AND lender_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, status.trim());
+            ps.setInt(2, id);
+            ps.setInt(3, this.lenderId);
             ps.executeUpdate();
         }
     }
 
     public BigDecimal calculateTotalInterest(BigDecimal principal, BigDecimal interestRate,
-                                              String ratePeriod, String interestType,
-                                              int durationMonths) {
+            String ratePeriod, String interestType,
+            int durationMonths) {
 
         BigDecimal rateDecimal = interestRate.divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
 
@@ -180,9 +233,11 @@ public class LoanService {
             if ("annually".equalsIgnoreCase(ratePeriod)) {
                 monthlyRate = rateDecimal.divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
             } else if ("weekly".equalsIgnoreCase(ratePeriod)) {
-                monthlyRate = rateDecimal.multiply(new BigDecimal("52")).divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+                monthlyRate = rateDecimal.multiply(new BigDecimal("52")).divide(new BigDecimal("12"), 10,
+                        RoundingMode.HALF_UP);
             } else if ("daily".equalsIgnoreCase(ratePeriod)) {
-                monthlyRate = rateDecimal.multiply(new BigDecimal("365")).divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+                monthlyRate = rateDecimal.multiply(new BigDecimal("365")).divide(new BigDecimal("12"), 10,
+                        RoundingMode.HALF_UP);
             } else {
                 monthlyRate = rateDecimal;
             }
@@ -210,9 +265,11 @@ public class LoanService {
             if ("annually".equalsIgnoreCase(ratePeriod)) {
                 numberOfPeriods = months.divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
             } else if ("weekly".equalsIgnoreCase(ratePeriod)) {
-                numberOfPeriods = months.multiply(new BigDecimal("52")).divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+                numberOfPeriods = months.multiply(new BigDecimal("52")).divide(new BigDecimal("12"), 10,
+                        RoundingMode.HALF_UP);
             } else if ("daily".equalsIgnoreCase(ratePeriod)) {
-                numberOfPeriods = months.multiply(new BigDecimal("365")).divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+                numberOfPeriods = months.multiply(new BigDecimal("365")).divide(new BigDecimal("12"), 10,
+                        RoundingMode.HALF_UP);
             } else {
                 numberOfPeriods = months;
             }
@@ -223,6 +280,7 @@ public class LoanService {
 
     private Loan readLoan(ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
+        int rowLenderId = rs.getInt("lender_id");
         int borrowerId = rs.getInt("borrower_id");
         String borrowerName = rs.getString("borrower_name");
         BigDecimal principal = rs.getBigDecimal("principal");
@@ -256,7 +314,7 @@ public class LoanService {
             updatedAt = rs.getTimestamp("updated_at").toLocalDateTime();
         }
 
-        return new Loan(id, borrowerId, borrowerName, principal, interestType, interestRate,
+        return new Loan(id, rowLenderId, borrowerId, borrowerName, principal, interestType, interestRate,
                 ratePeriod, durationMonths, totalInterest, totalPayable, outstandingBalance,
                 startDate, dueDate, status, remarks, createdAt, updatedAt);
     }

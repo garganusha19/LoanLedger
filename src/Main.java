@@ -16,15 +16,18 @@ public class Main {
         boolean appRunning = true;
 
         while (appRunning) {
-            boolean loggedIn = loginMenu.display();
+            Lender currentLender = loginMenu.display();
 
-            if (!loggedIn) {
+            if (currentLender == null) {
                 System.out.println("Thank you for using LoanLedger. Goodbye!");
                 System.out.println();
                 break;
             }
 
-            boolean wantLoginAgain = showMainMenu(scanner, connected);
+            boolean wantLoginAgain = showMainMenu(scanner, connected, currentLender);
+
+            // Clear current lender session upon logout or exit
+            currentLender = null;
 
             if (!wantLoginAgain) {
                 appRunning = false;
@@ -58,15 +61,17 @@ public class Main {
         }
     }
 
-    private static boolean showMainMenu(Scanner scanner, boolean connected) {
-        BorrowerService borrowerService = new BorrowerService();
-        LoanService loanService = new LoanService();
-        InstalmentService instalmentService = new InstalmentService();
+
+    private static boolean showMainMenu(Scanner scanner, boolean connected, Lender currentLender) {
+        int lenderId = currentLender.getId();
+        BorrowerService borrowerService = new BorrowerService(lenderId);
+        LoanService loanService = new LoanService(lenderId);
+        InstalmentService instalmentService = new InstalmentService(lenderId);
         boolean running = true;
 
         while (running) {
             String status = connected ? "Connected" : "Not Connected";
-            printMenu(status);
+            printMenu(status, currentLender.getUsername());
 
             String input = scanner.nextLine().trim();
             System.out.println();
@@ -116,8 +121,9 @@ public class Main {
         return false;
     }
 
-    private static void printMenu(String connectionStatus) {
-        System.out.println("Database Connection: " + connectionStatus);
+
+    private static void printMenu(String connectionStatus, String username) {
+        System.out.println("Logged-in Lender: " + username + " | Database Connection: " + connectionStatus);
         System.out.println();
         System.out.println("--------------- MAIN MENU -----------------");
         System.out.println();

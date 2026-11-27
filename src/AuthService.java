@@ -17,7 +17,7 @@ public class AuthService {
         String sql = "SELECT * FROM lenders WHERE username = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username.trim());
 
@@ -36,6 +36,27 @@ public class AuthService {
         }
     }
 
+    public Lender getLenderByUsername(String username) throws SQLException {
+        if (username == null || username.trim().isEmpty()) {
+            return null;
+        }
+
+        String sql = "SELECT id, username, password FROM lenders WHERE username = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username.trim());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Lender(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean isUsernameTaken(String username) throws SQLException {
         if (username == null || username.trim().isEmpty()) {
             return false;
@@ -44,7 +65,7 @@ public class AuthService {
         String sql = "SELECT id FROM lenders WHERE username = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username.trim());
 
@@ -66,7 +87,7 @@ public class AuthService {
         String sql = "INSERT INTO lenders (username, password) VALUES (?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username.trim());
             stmt.setString(2, password);

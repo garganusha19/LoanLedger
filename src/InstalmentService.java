@@ -12,9 +12,24 @@ import java.util.List;
 
 public class InstalmentService {
 
-    private final LoanService loanService = new LoanService();
+    private final int lenderId;
+    private final LoanService loanService;
+
+    public InstalmentService(int lenderId) {
+        this.lenderId = lenderId;
+        this.loanService = new LoanService(lenderId);
+    }
+
+    public InstalmentService() {
+        this(0);
+    }
+
+    public int getLenderId() {
+        return lenderId;
+    }
 
     public List<Instalment> generateInstalments(int loanId) throws SQLException {
+        // Enforces that loan belongs to the logged-in lender
         Loan loan = loanService.getLoanById(loanId);
 
         if (!loan.isActive()) {
@@ -32,7 +47,8 @@ public class InstalmentService {
 
         List<Instalment> instalments = buildMonthlySchedule(loan);
 
-        String checkSql = "SELECT COUNT(*) FROM instalments WHERE loan_id = ?";
+        String checkSql = "SELECT COUNT(*) FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                "WHERE i.loan_id = ? AND l.lender_id = ?";
         String insertSql = "INSERT INTO instalments " +
                 "(loan_id, installment_number, due_date, principal_due, interest_due, " +
                 "amount_due, amount_paid, outstanding_amount, status) " +
@@ -42,6 +58,7 @@ public class InstalmentService {
             // Prevent duplicate instalment generation for the same loan
             try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
                 checkPs.setInt(1, loanId);
+                checkPs.setInt(2, this.lenderId);
                 try (ResultSet rs = checkPs.executeQuery()) {
                     if (rs.next() && rs.getInt(1) > 0) {
                         throw new IllegalArgumentException(
@@ -137,8 +154,7 @@ public class InstalmentService {
                     amountDue,
                     zeroPaid,
                     amountDue,
-                    "PENDING"
-            );
+                    "PENDING");
             list.add(inst);
         }
 
@@ -147,31 +163,43 @@ public class InstalmentService {
 
     public List<Instalment> getAllInstalments() throws SQLException {
         List<Instalment> list = new ArrayList<>();
-        String sql = "SELECT id, loan_id, installment_number, due_date, principal_due, interest_due, " +
-                     "amount_due, amount_paid, outstanding_amount, status " +
-                     "FROM instalments ORDER BY loan_id ASC, installment_number ASC";
+        String sql = "SELECT i.id, i.loan_id, i.installment_number, i.due_date, i.principal_due, i.interest_due, " +
+                     "i.amount_due, i.amount_paid, i.outstanding_amount, i.status " +
+                     "FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                     "WHERE l.lender_id = ? " +
+                     "ORDER BY i.loan_id ASC, i.installment_number ASC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(readInstalment(rs));
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readInstalment(rs));
+                }
             }
         }
         return list;
     }
 
     public List<Instalment> getInstalmentsByLoanId(int loanId) throws SQLException {
+        // Enforce loan ownership
+        loanService.getLoanById(loanId);
+
         List<Instalment> list = new ArrayList<>();
-        String sql = "SELECT id, loan_id, installment_number, due_date, principal_due, interest_due, " +
-                     "amount_due, amount_paid, outstanding_amount, status " +
-                     "FROM instalments WHERE loan_id = ? ORDER BY installment_number ASC";
+        String sql = "SELECT i.id, i.loan_id, i.installment_number, i.due_date, i.principal_due, i.interest_due, " +
+                "i.amount_due, i.amount_paid, i.outstanding_amount, i.status " +
+                "FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                "WHERE i.loan_id = ? AND l.lender_id = ? " +
+                "ORDER BY i.installment_number ASC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, loanId);
+            ps.setInt(2, this.lenderId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(readInstalment(rs));
@@ -183,17 +211,21 @@ public class InstalmentService {
 
     public List<Instalment> getPendingInstalments() throws SQLException {
         List<Instalment> list = new ArrayList<>();
-        String sql = "SELECT id, loan_id, installment_number, due_date, principal_due, interest_due, " +
-                     "amount_due, amount_paid, outstanding_amount, status " +
-                     "FROM instalments WHERE outstanding_amount > 0 AND status = 'PENDING' " +
-                     "ORDER BY due_date ASC, loan_id ASC, installment_number ASC";
+        String sql = "SELECT i.id, i.loan_id, i.installment_number, i.due_date, i.principal_due, i.interest_due, " +
+                     "i.amount_due, i.amount_paid, i.outstanding_amount, i.status " +
+                     "FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                     "WHERE l.lender_id = ? AND i.outstanding_amount > 0 AND i.status = 'PENDING' " +
+                     "ORDER BY i.due_date ASC, i.loan_id ASC, i.installment_number ASC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(readInstalment(rs));
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readInstalment(rs));
+                }
             }
         }
         return list;
@@ -201,21 +233,24 @@ public class InstalmentService {
 
     public List<Instalment> getOverdueInstalments() throws SQLException {
         List<Instalment> list = new ArrayList<>();
-        String sql = "SELECT id, loan_id, installment_number, due_date, principal_due, interest_due, " +
-                     "amount_due, amount_paid, outstanding_amount, status " +
-                     "FROM instalments WHERE due_date < CURRENT_DATE AND outstanding_amount > 0 " +
-                     "AND status <> 'PAID' " +
-                     "ORDER BY due_date ASC, loan_id ASC, installment_number ASC";
+        String sql = "SELECT i.id, i.loan_id, i.installment_number, i.due_date, i.principal_due, i.interest_due, " +
+                     "i.amount_due, i.amount_paid, i.outstanding_amount, i.status " +
+                     "FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                     "WHERE l.lender_id = ? AND i.due_date < CURRENT_DATE AND i.outstanding_amount > 0 " +
+                     "AND i.status <> 'PAID' " +
+                     "ORDER BY i.due_date ASC, i.loan_id ASC, i.installment_number ASC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                Instalment inst = readInstalment(rs);
-                // Mark display status as OVERDUE for unpaid past-due instalments
-                inst.setStatus("OVERDUE");
-                list.add(inst);
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Instalment inst = readInstalment(rs);
+                    inst.setStatus("OVERDUE");
+                    list.add(inst);
+                }
             }
         }
         return list;
@@ -223,19 +258,22 @@ public class InstalmentService {
 
     public List<Instalment> getUpcomingInstalments() throws SQLException {
         List<Instalment> list = new ArrayList<>();
-        String sql = "SELECT id, loan_id, installment_number, due_date, principal_due, interest_due, " +
-                     "amount_due, amount_paid, outstanding_amount, status " +
-                     "FROM instalments " +
-                     "WHERE due_date >= CURRENT_DATE AND due_date <= DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY) " +
-                     "AND outstanding_amount > 0 AND status <> 'PAID' " +
-                     "ORDER BY due_date ASC, loan_id ASC, installment_number ASC";
+        String sql = "SELECT i.id, i.loan_id, i.installment_number, i.due_date, i.principal_due, i.interest_due, " +
+                     "i.amount_due, i.amount_paid, i.outstanding_amount, i.status " +
+                     "FROM instalments i JOIN loans l ON i.loan_id = l.id " +
+                     "WHERE l.lender_id = ? AND i.due_date >= CURRENT_DATE AND i.due_date <= DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY) " +
+                     "AND i.outstanding_amount > 0 AND i.status <> 'PAID' " +
+                     "ORDER BY i.due_date ASC, i.loan_id ASC, i.installment_number ASC";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                list.add(readInstalment(rs));
+            ps.setInt(1, this.lenderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(readInstalment(rs));
+                }
             }
         }
         return list;
